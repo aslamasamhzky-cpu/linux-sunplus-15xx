@@ -1,0 +1,35 @@
+name: Build MiOS Kernel
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Cross-Compiler Toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu
+
+    - name: Configure Kernel
+      run: |
+        cd 4.4.7
+        ls arch/mips/configs/
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sunplus_15xx_defconfig
+
+    - name: Build Kernel
+      run: |
+        cd 4.4.7
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j$(nproc)
+
+    - name: Upload Kernel Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mips-kernel-image
+        path: 4.4.7/arch/mips/boot/vmlinux.bin
