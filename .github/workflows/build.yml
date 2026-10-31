@@ -17,22 +17,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu
 
-    - name: Debug Folders and Configs
-      run: |
-        echo "--- Checking Folders ---"
-        ls -la
-        echo "--- Checking Configs ---"
-        cd linux-4.4.7 || cd 4.4.7
-        ls arch/mips/configs/
-
     - name: Configure Kernel
       run: |
-        cd linux-4.4.7 || cd 4.4.7
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sunplus_15xx_defconfig
+        cd linux-4.4.7
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sphe15xx_defconfig
 
     - name: Build Kernel
       run: |
-        cd linux-4.4.7 || cd 4.4.7
+        cd linux-4.4.7
         make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j$(nproc)
 
     - name: Upload Kernel Artifact
@@ -41,4 +33,4 @@ jobs:
         name: mips-kernel-image
         path: |
           linux-4.4.7/arch/mips/boot/vmlinux.bin
-          4.4.7/arch/mips/boot/vmlinux.bin
+          linux-4.4.7/arch/mips/boot/uImage
