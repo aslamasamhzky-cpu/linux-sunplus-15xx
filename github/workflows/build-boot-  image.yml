@@ -1,0 +1,39 @@
+name: Package Boot Image
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install Tools
+      run: sudo apt-get install -y u-boot-tools
+
+    - name: Download Artifacts (Simulation)
+      run: |
+        # بنعمل فولدر ونحط فيه الملفات اللي إنت حملتها (افتراضياً هنعمل ملفات تجريبية هنا)
+        mkdir -p output
+        # في المشروع الحقيقي، هناخد vmlinux و rootfs من الـ Artifacts
+        touch output/vmlinux
+        touch output/rootfs.cpio.gz
+
+    - name: Create uImage
+      run: |
+        cd linux-4.4.7
+        # هنا بنحول النواة لصيغة uImage اللي البوت لودر بيفهمها
+        mkimage -A mips -O linux -T kernel -C gzip -a 0x80010000 -e 0x80010000 -n "MiOS Kernel" -d vmlinux ../output/uImage
+        cd ..
+
+    - name: Upload Final Boot Files
+      uses: actions/upload-artifact@v4
+      with:
+        name: mios-bootable-image
+        path: |
+          output/uImage
+          output/rootfs.cpio.gz
