@@ -22,11 +22,16 @@ jobs:
         cd linux-4.4.7
         make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sphe15xx_defconfig
 
+    - name: Patch DTC Makefile (Fix GCC 10+ Error)
+      run: |
+        cd linux-4.4.7
+        # السطر ده بيدخل على ملف الـ Makefile ويضيف الفلاج السحري بنفسه
+        echo "HOSTCFLAGS += -fcommon" >> scripts/dtc/Makefile
+
     - name: Build Kernel
       run: |
         cd linux-4.4.7
-        # التعديل السحري: إجبار النظام على استخدام fcommon في كل حاجة
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- CFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j$(nproc)
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
