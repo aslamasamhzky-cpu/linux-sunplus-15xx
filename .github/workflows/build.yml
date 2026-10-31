@@ -28,5 +28,5 @@ jobs:
       with:
         name: mips-kernel-image
         path: |
-          linux-4.4.7/arch/mips/boot/vmlinux.bin
-          linux-4.4.7/arch/mips/boot/uImage
+          linux-4.4.7/vmlinux
+          linux-4.4.7/arch/mips/boot/
