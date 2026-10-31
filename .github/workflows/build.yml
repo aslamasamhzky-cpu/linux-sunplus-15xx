@@ -1,4 +1,4 @@
-name: Build MiOS Kernel
+name: Build MiOS Kernel (in Docker)
 
 on:
   push:
@@ -12,26 +12,15 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Cross-Compiler and Dependencies
+    - name: Build Kernel inside Docker (Ubuntu 16.04)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu bc flex bison libssl-dev libncurses5-dev
-
-    - name: Configure Kernel
-      run: |
-        cd linux-4.4.7
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sphe15xx_defconfig
-
-    - name: Patch DTC Makefile (Fix GCC 10+ Error)
-      run: |
-        cd linux-4.4.7
-        # السطر ده بيدخل على ملف الـ Makefile ويضيف الفلاج السحري بنفسه
-        echo "HOSTCFLAGS += -fcommon" >> scripts/dtc/Makefile
-
-    - name: Build Kernel
-      run: |
-        cd linux-4.4.7
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j$(nproc)
+        docker run --rm -v ${{ github.workspace }}:/work -w /work ubuntu:16.04 /bin/bash -c "
+          apt-get update && \
+          apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu bc flex bison libssl-dev libncurses5-dev make && \
+          cd linux-4.4.7 && \
+          make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sphe15xx_defconfig && \
+          make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j\$(nproc)
+        "
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
