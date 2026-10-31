@@ -12,10 +12,10 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Cross-Compiler Toolchain
+    - name: Install Cross-Compiler and Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu
+        sudo apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu bc flex bison libssl-dev libncurses5-dev
 
     - name: Configure Kernel
       run: |
