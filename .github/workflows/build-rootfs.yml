@@ -1,0 +1,39 @@
+name: Build MiOS RootFS & Compress Kernel
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Compress Kernel
+      run: |
+        # ضغط النواة عشان تدخل في الـ 4 ميجا
+        gzip -9 linux-4.4.7/vmlinux
+        mv linux-4.4.7/vmlinux.gz linux-4.4.7/vmlinux.bin.gz
+
+    - name: Package RootFS
+      run: |
+        # تجميع ملفات النظام والواجهة
+        if [ -d "rootfs" ]; then
+          cd rootfs
+          find . | cpio -o -H newc | gzip -9 > ../rootfs.cpio.gz
+          cd ..
+        else
+          echo "Error: RootFS folder not found!"
+          exit 1
+        fi
+
+    - name: Upload System Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mios-system-files
+        path: |
+          rootfs.cpio.gz
+          linux-4.4.7/vmlinux.bin.gz
