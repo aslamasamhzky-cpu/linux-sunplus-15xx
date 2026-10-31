@@ -25,7 +25,7 @@ jobs:
     - name: Build Kernel
       run: |
         cd linux-4.4.7
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j$(nproc)
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- HOSTCFLAGS="-fcommon" -j$(nproc)
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
