@@ -25,7 +25,8 @@ jobs:
     - name: Build Kernel
       run: |
         cd linux-4.4.7
-        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- HOSTCFLAGS="-fcommon" -j$(nproc)
+        # التعديل السحري: إجبار النظام على استخدام fcommon في كل حاجة
+        make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- CFLAGS="-fcommon" HOSTCFLAGS="-fcommon" -j$(nproc)
 
     - name: Upload Kernel Artifact
       uses: actions/upload-artifact@v4
