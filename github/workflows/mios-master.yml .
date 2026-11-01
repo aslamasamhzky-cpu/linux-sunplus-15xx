@@ -1,0 +1,68 @@
+name: MiOS Master Build & Test
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Build Kernel in Docker
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/work -w /work ubuntu:16.04 /bin/bash -c "
+          apt-get update && \
+          apt-get install -y gcc-mipsel-linux-gnu binutils-mipsel-linux-gnu bc flex bison libssl-dev libncurses5-dev make && \
+          cd linux-4.4.7 && \
+          make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- sphe15xx_defconfig && \
+          scripts/config -e GPIO_SYSFS -e GPIOLIB && \
+          make ARCH=mips CROSS_COMPILE=mipsel-linux-gnu- -j\$(nproc)
+        "
+
+    - name: Build RootFS
+      run: |
+        mkdir -p rootfs/bin rootfs/dev rootfs/proc rootfs/sys rootfs/etc rootfs/www
+        cat << 'EOF' > rootfs/init
+        #!/bin/sh
+        mount -t proc none /proc
+        mount -t sysfs none /sys
+        echo "Welcome to MiOS Linux!"
+        exec /bin/sh
+        EOF
+        chmod +x rootfs/init
+        cd rootfs
+        find . | cpio -o -H newc | gzip -9 > ../rootfs.cpio.gz
+        cd ..
+
+    - name: Install QEMU
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-system-mips
+
+    - name: Test Boot in QEMU
+      run: |
+        echo "Starting QEMU Test..."
+        timeout 20s qemu-system-mipsel -M malta -m 256 -kernel linux-4.4.7/vmlinux -initrd rootfs.cpio.gz -append "console=ttyS0" -nographic > qemu_log.txt 2>&1 || true
+        
+        echo "=============== QEMU OUTPUT ==============="
+        cat qemu_log.txt
+        echo "==========================================="
+        
+        if grep -q "Welcome to MiOS Linux!" qemu_log.txt; then
+          echo "✅ SUCCESS: MiOS Linux booted successfully in QEMU!"
+        else
+          echo "❌ FAILED: MiOS Linux did not boot properly."
+          exit 1
+        fi
+
+    - name: Upload Final Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: MiOS-Final-Build
+        path: |
+          linux-4.4.7/vmlinux
+          rootfs.cpio.gz
